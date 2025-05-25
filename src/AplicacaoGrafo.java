@@ -1,14 +1,13 @@
-//Italo Viegas Silva 10418393
-//Luiza Gomes Cruz 10416544
-//Thomaz Palazzolo Filho 10417108
+// Autores: Italo Viegas Silva, Luiza Gomes Cruz, Thomaz Palazzolo Filho
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 // Classe principal da aplicação
 public class AplicacaoGrafo {
     private Grafo grafo = new Grafo();  // Objeto do grafo principal
-    private String arquivo = "C:\\Users\\thoma\\Desktop\\projeto andre\\grafo.txt"; // Caminho do arquivo do grafo
+    private String arquivo = "C:\\Users\\thoma\\Desktop\\projeto andre\\untitled\\grafo.txt"; // Caminho do arquivo do grafo
     private Scanner scanner = new Scanner(System.in); // Scanner para entrada do usuário
 
     public static void main(String[] args) {
@@ -30,14 +29,23 @@ public class AplicacaoGrafo {
                 case "e": removerVertice(); break;
                 case "f": removerAresta(); break;
                 case "g": mostrarConteudoArquivo(); break;
-                case "h": mostrarGrafo(); break;
-                case "i": verificarConexidadeEMostrarReduzido(); break;
-                case "j": System.exit(0); // Encerra o programa
+                case "h": mostrarListaAdjacencia(); break;
+                case "i": mostrarMatrizAdjacencia(); break;
+                case "j": verificarConexidadeEMostrarReduzido(); break;
+                case "k": mostrarComponenteConexa(); break;
+                case "l": mostrarArvoreGeradora(); break;
+                case "m": verificarEuleriano(); break;
+                case "n": verificarCaminhoEuleriano(); break;
+                case "o": verificarHamiltoniano(); break;
+                case "p": encontrarCicloHamiltoniano(); break;
+                case "q": mostrarGrausDosVertices(); break;
+                case "r": encontrarMenorCaminho(); break;
+                case "s": System.exit(0); // Encerra o programa
                 default: System.out.println("Opção inválida!");
             }
         }
     }
-
+    
     // Mostra o menu de opções
     private void exibirMenu() {
         System.out.println("\n=== MENU PRINCIPAL ===");
@@ -48,10 +56,30 @@ public class AplicacaoGrafo {
         System.out.println("e) Remover vértice");
         System.out.println("f) Remover aresta");
         System.out.println("g) Mostrar conteúdo do arquivo");
-        System.out.println("h) Mostrar grafo");
-        System.out.println("i) Verificar conexidade e mostrar grafo reduzido");
-        System.out.println("j) Sair");
+        System.out.println("h) Mostrar lista de adjacencia");
+        System.out.println("i) Mostrar matriz de adjacencia");
+        System.out.println("j) Verificar conexidade e mostrar grafo reduzido");
+        System.out.println("k) Mostrar componente conexa a partir de um vértice");
+        System.out.println("l) Mostrar árvore geradora");
+        System.out.println("m) Verificar se grafo é euleriano");
+        System.out.println("n) Verificar se tem caminho euleriano");
+        System.out.println("o) Verificar se pode ser hamiltoniano");
+        System.out.println("p) Encontrar ciclo hamiltoniano");
+        System.out.println("q) Mostrar graus dos vértices");
+        System.out.println("r) Mostrar menor caminho");
+        System.out.println("s) Sair");      
         System.out.print("Escolha uma opção: ");
+    }
+
+    // Mostra a componente conexa a partir de um vértice
+    private void mostrarComponenteConexa() {
+        try {
+            System.out.print("Digite o vértice inicial para análise: ");
+            int vertice = Integer.parseInt(scanner.nextLine());
+            grafo.mostrarComponenteConexa(vertice);
+        } catch (NumberFormatException e) {
+            System.out.println("Erro: Digite um número válido!");
+        }
     }
 
     // Lê os dados do grafo a partir do arquivo
@@ -201,32 +229,60 @@ public class AplicacaoGrafo {
     }
 
     // Mostra o grafo em forma de lista e matriz de adjacência
-    private void mostrarGrafo() {
-        System.out.println("\n=== LISTA DE ADJACÊNCIA ===");
-        grafo.vertices.stream()
-                .sorted()
-                .forEach(v -> {
-                    System.out.print(v + " → ");
-                    grafo.adjacencias.getOrDefault(v, Collections.emptyList())
-                            .forEach(d -> System.out.print(d + " "));
-                    System.out.println();
-                });
-
-        System.out.println("\n=== MATRIZ DE ADJACÊNCIA ===");
-        System.out.print("        ");
-        grafo.vertices.stream().sorted().forEach(v -> System.out.printf("%8d", v));
-        System.out.println();
-
-        grafo.vertices.stream().sorted().forEach(origem -> {
-            System.out.printf("%6d ", origem);
-            grafo.vertices.stream().sorted().forEach(destino -> {
-                int valor = grafo.adjacencias.getOrDefault(origem, Collections.emptyList())
-                        .contains(destino) ? 1 : 0;
-                System.out.printf("%8d", valor);
-            });
-            System.out.println();
-        });
+// Mostra o grafo em forma de lista e matriz de adjacência
+private void mostrarListaAdjacencia() {
+    if (grafo.vertices.isEmpty()) {
+        System.out.println("\nO grafo está vazio!");
+        return;
     }
+
+    System.out.println("\n=== LISTA DE ADJACÊNCIA ===");
+    grafo.vertices.stream()
+            .sorted()
+            .forEach(v -> {
+                System.out.print(v + " → ");
+                List<Integer> vizinhos = grafo.adjacencias.getOrDefault(v, Collections.emptyList());
+                if (vizinhos.isEmpty()) {
+                    System.out.print("Nenhum vizinho");
+                } else {
+                    vizinhos.forEach(d -> System.out.print(d + " "));
+                }
+                System.out.println();
+            });
+}
+
+private void mostrarMatrizAdjacencia() {
+    if (grafo.vertices.isEmpty()) {
+        System.out.println("\nO grafo está vazio!");
+        return;
+    }
+
+    System.out.println("\n=== MATRIZ DE ADJACÊNCIA ===");
+    
+    // Determina o tamanho máximo do número de vértice para formatação
+    int maxLength = grafo.vertices.stream()
+            .mapToInt(v -> String.valueOf(v).length())
+            .max()
+            .orElse(1);
+
+    // Cabeçalho da matriz
+    System.out.printf("%" + (maxLength + 2) + "s", "");
+    for (int v : grafo.vertices.stream().sorted().collect(Collectors.toList())) {
+        System.out.printf("%" + (maxLength + 1) + "d", v);
+    }
+    System.out.println();
+
+    // Corpo da matriz
+    for (int origem : grafo.vertices.stream().sorted().collect(Collectors.toList())) {
+        System.out.printf("%" + (maxLength + 1) + "d ", origem);
+        for (int destino : grafo.vertices.stream().sorted().collect(Collectors.toList())) {
+            int valor = grafo.adjacencias.getOrDefault(origem, Collections.emptyList())
+                    .contains(destino) ? 1 : 0;
+            System.out.printf("%" + (maxLength + 1) + "d", valor);
+        }
+        System.out.println();
+    }
+}
 
     // Verifica a conexidade do grafo e mostra o grafo reduzido
     private void verificarConexidadeEMostrarReduzido() {
@@ -268,5 +324,61 @@ public class AplicacaoGrafo {
             total += destinos.size();
         }
         return total;
+    }
+
+    // Mostra a árvore geradora
+    private void mostrarArvoreGeradora() {
+        grafo.mostrarArvoreGeradora();
+    }
+
+    // Verifica se o grafo é euleriano
+    private void verificarEuleriano() {
+        System.out.println("O grafo " + (grafo.ehEuleriano() ? "é" : "não é") + " euleriano.");
+    }
+
+    // Verifica se o grafo tem caminho euleriano
+    private void verificarCaminhoEuleriano() {
+        System.out.println("O grafo " + (grafo.temCaminhoEuleriano() ? "tem" : "não tem") + " caminho euleriano.");
+    }
+
+    // Verifica se o grafo pode ser hamiltoniano
+    private void verificarHamiltoniano() {
+        System.out.println("O grafo " + (grafo.podeSerHamiltoniano() ? "pode ser" : "não atende às condições para ser") + " hamiltoniano.");
+    }
+
+    // Mostra os graus dos vértices
+    private void mostrarGrausDosVertices() {
+        grafo.mostrarGrausDosVertices();
+    }
+
+    // Encontra e mostra um ciclo hamiltoniano
+    private void encontrarCicloHamiltoniano() {
+        List<Integer> ciclo = grafo.encontrarCicloHamiltoniano();
+        if (ciclo.isEmpty()) {
+            System.out.println("Nenhum ciclo hamiltoniano encontrado.");
+        } else {
+            System.out.println("Ciclo Hamiltoniano encontrado: " + ciclo);
+        }
+    }
+
+    // Encontra e mostra o menor caminho entre dois vértices
+    private void encontrarMenorCaminho() {
+        try {
+            System.out.print("Vértice de origem: ");
+            int origem = Integer.parseInt(scanner.nextLine());
+            System.out.print("Vértice de destino: ");
+            int destino = Integer.parseInt(scanner.nextLine());
+
+            List<Integer> caminho = grafo.encontrarMenorCaminho(origem, destino);
+
+            if (caminho.isEmpty()) {
+                System.out.println("Não existe caminho de " + origem + " para " + destino + "!");
+            } else {
+                System.out.println("Menor caminho: " + caminho);
+                System.out.println("Distância: " + (caminho.size() - 1) + " arestas");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Erro: Digite números válidos!");
+        }
     }
 }
